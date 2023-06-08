@@ -44,10 +44,10 @@ def transform_data():
     movies_dataset = apply_genre_indicators(movies_dataset)
 
     rating_data = (
-        rating_data.groupby(['user_id', 'movie_id', 'movie_rating', 'time_period'])
+        rating_data.groupby(['user_id', 'time_period', 'movie_id',  'movie_rating'])  #moved time_period to second column for sequence creation based on time_period
         .size()
         .reset_index()
-        .sort_values(['user_id', 'movie_id', 'movie_rating', 'time_period'], ascending=[True, True, True, True])
+        .sort_values(['user_id', 'time_period', 'movie_id', 'movie_rating'], ascending=[True, True, True, True])
         .drop(columns=[0])
     )
 
@@ -55,7 +55,7 @@ def transform_data():
 
 
 if __name__ == '__main__':
-    movies_data, ratings_data, users_data = transform_data()
+    movies_data, rating_data, user_data = transform_data()
     print(movies_data.head(10))
 
 
