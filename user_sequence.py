@@ -60,10 +60,16 @@ if __name__ =='__main__':
     movies_data, ratings_data, users_data = transform_data()
     rating_sequence = prepare_user_sequence_data(ratings_data)
 
-    #We already had data in asceding order according to their time_stamp so we don't need time_stamp anymore
-    #However I will still keep it just to see what happens if I add time_stamp when performing positional embedding
-    rating_col_subsequence = apply_subsequences_to_columns(rating_sequence, ['time_period', 'movies_id', 'movie_ratings'], 8, 4)
+    #Apply the subsequence function to the columns
+    rating_col_subsequence = apply_subsequences_to_columns(rating_sequence, ['time_period', 'movies_id', 'movie_ratings'], 4, 2)
 
-
-
-
+    #Explode the columns
+    rating_col_subsequence = rating_col_subsequence.explode(['time_period', 'movies_id', 'movie_ratings'])
+    rating_col_subsequence.reset_index(drop=True, inplace=True) 
+    
+    #Remove the square brackets from the columns
+    cols = rating_col_subsequence.columns.tolist()
+    for col in cols:
+        rating_col_subsequence[col] = rating_col_subsequence[col].astype(str)
+        rating_col_subsequence[col] = rating_col_subsequence[col].str.replace('[', '').str.replace(']', '')
+    
