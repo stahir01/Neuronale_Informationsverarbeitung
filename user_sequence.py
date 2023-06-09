@@ -2,7 +2,7 @@ import pandas as pd
 from data_prep import transform_data
 
 
-
+# Generate sequence of various users
 def prepare_user_sequence_data(ratings_data):
     
     user_sequence = {}
@@ -29,7 +29,7 @@ def prepare_user_sequence_data(ratings_data):
     return user_sequence
 
 
-
+# Generate subsequences from a given list of values using a sliding window approach
 def generate_subsequences(values, window_size, step_size):
     sequences = []
     start_index = 0
@@ -45,7 +45,9 @@ def generate_subsequences(values, window_size, step_size):
         start_index += step_size
     return sequences
 
-def apply_subsequences_to_columns(dataframe, columns, sequence_length, step_size):
+
+# Divide subsequences for each user into separate rows in the dataframe
+def append_subsequences_to_columns(dataframe, columns, sequence_length, step_size):
     for column in columns:
         for index, row in dataframe.iterrows():
             column_values = row[column]
@@ -55,21 +57,25 @@ def apply_subsequences_to_columns(dataframe, columns, sequence_length, step_size
     return dataframe
 
 
+# Transform the dataframe into a format that can be used for training
+def transform_dataframe(dataframe, columns):
+
+    # Explode the columns
+    dataframe = dataframe.explode(columns)
+    dataframe.reset_index(drop=True, inplace=True)
+
+    # Remove the square brackets from the columns
+    for col in columns:
+        dataframe[col] = dataframe[col].astype(str)
+        dataframe[col] = dataframe[col].str.replace("[", "").str.replace("]", "").str.replace("'", "")
+
+    return dataframe
+
+
 
 if __name__ =='__main__':
     movies_data, ratings_data, users_data = transform_data()
     rating_sequence = prepare_user_sequence_data(ratings_data)
 
-    #Apply the subsequence function to the columns
-    rating_col_subsequence = apply_subsequences_to_columns(rating_sequence, ['time_period', 'movies_id', 'movie_ratings'], 4, 2)
-
-    #Explode the columns
-    rating_col_subsequence = rating_col_subsequence.explode(['time_period', 'movies_id', 'movie_ratings'])
-    rating_col_subsequence.reset_index(drop=True, inplace=True) 
-    
-    #Remove the square brackets from the columns
-    cols = rating_col_subsequence.columns.tolist()
-    for col in cols:
-        rating_col_subsequence[col] = rating_col_subsequence[col].astype(str)
-        rating_col_subsequence[col] = rating_col_subsequence[col].str.replace('[', '').str.replace(']', '')
-    
+    rating_col_subsequence = append_subsequences_to_columns(rating_sequence, ['time_period', 'movies_id', 'movie_ratings'], 8, 4)    
+    rating_col_subsequence = transform_dataframe(rating_col_subsequence, ['time_period', 'movies_id', 'movie_ratings'])
