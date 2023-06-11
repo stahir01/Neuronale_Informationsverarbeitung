@@ -52,7 +52,6 @@ def tensor_batched_dataset(train_dataset, batch_size):
 
     return dataset
 
-
 if __name__ == '__main__':
     movies_data, ratings_data, users_data = transform_data()
     rating_sequence = prepare_user_sequence_data(ratings_data)
