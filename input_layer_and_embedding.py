@@ -37,20 +37,17 @@ def create_input_model(sequence_size):
 
 
 
-#Work on Embedding Layer
-
 ## Vocaubulary dataset for Embedding
-def create_embedding_vocabulary(dataframe):
+def create_embedding_vocabulary(dataframe, col_list):
     
-    vocabulary = {
-        'user_id': dataframe['user_id'].unique().tolist(),
-        'movie_id': dataframe['movie_id'].unique().tolist()
-    }
+    vocabulary = {}
 
-    for col, vocab in vocabulary.items():
-        vocab_length = len(vocab)
-
-    return vocabulary, vocab_length
+    #Create vocabulary for each column
+    for col in col_list:
+        unique_values = dataframe[col].unique().tolist()
+        vocabulary[col] = unique_values
+    
+    return vocabulary
 
 
 
