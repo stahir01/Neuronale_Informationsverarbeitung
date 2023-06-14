@@ -14,7 +14,7 @@ Idea:
 """
 
 #Convert pandas dataset into tensor
-def tensor_batched_dataset(train_dataset, batch_size):
+def tensor_batched_dataset(train_dataset, batch_size, number=7):
 
     user_ids = []
     movie_sequences = []
@@ -25,11 +25,11 @@ def tensor_batched_dataset(train_dataset, batch_size):
     #Convert pandas dataset into list
     for index, row in train_dataset.iterrows():
         user_ids.append(str(index))
-        movies = [movie.strip() for movie in row['movies_id'].split(',')[:7]]         #First 7 movies
+        movies = [movie.strip() for movie in row['movies_id'].split(',')[:number]]         #First number movies
         movie_pred = row['movies_id'].split(',')[-1].strip()                          #Last movie as prediction
-        ratings = [int(rating) for rating in row['movie_ratings'].split(',')[:7]]    #Convert ratings to int
+        ratings = [int(rating) for rating in row['movie_ratings'].split(',')[:number]]    #Convert ratings to int
         rating_pred = int(row['movie_ratings'].split(',')[-1])
-        movie_sequences.append(movies)                                              #Shape: (len(dataset), 7)
+        movie_sequences.append(movies)                                              #Shape: (len(dataset), number)
         rating_sequences.append(ratings)                                            
         movie_predictions.append([movie_pred])                                      #Shape: (len(dataset), 1)
         rating_predictions.append([rating_pred])                                    
@@ -84,13 +84,26 @@ if __name__ == '__main__':
             print("-----------------------------")
             i += 1
 
+'''
+
+What we need to do:
+- create ordered lists
+- create sequences 
+- save these sequences seperately
+- add users info/data to time/rating infos
+- split into test and training sequences
+Transformer architecture:
+- Encoder
+- create model
+- run training and evaluation
+
+Questions:
+- 2 sequences: by movie_rating and by watch_order
+- movie_rating should enclude user infos
+- How to encode?
+- time period?
 
 
-
-
-
-
-
-
+'''
 
 
