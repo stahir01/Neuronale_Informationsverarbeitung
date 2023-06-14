@@ -6,12 +6,10 @@ from sklearn.model_selection import train_test_split
 from data_prep import transform_data
 from user_sequence import *
 from data_split import tensor_batched_dataset
-from tensorflow.keras.layers import StringLookup
 
 USER_FEATURES = []
 
 def create_input_model(sequence_size=4):
-
 
     # Define input layer for user IDs
     user_id_input = layers.Input(
@@ -48,36 +46,40 @@ def create_input_model(sequence_size=4):
 # - positional embedding added to the movie sequences
 # - add target movie to the movie sequence embedding
 def encode_input(inputs, sequence_length=4):
+
     # create vocabularies for embedding
     vocabulary = create_embedding_vocabulary(inputs) 
+    encoded_features = []
     ## Encode user features - what features do we include, how to separate
-    users = inputs['user_id_input']
-    for user_features in users:
-        # Compute embedding dimensions
-        embedding_dims = int(math.sqrt(len(vocabulary['user_id_input'])))
+    # TODO: add user information, at this point only the ID is used for encoding meaning there is no logical background to it
+    user_features = ['user_id_input']
+    for user_feature in user_features:
+        idx = layers.StringLookup(vocabulary=vocabulary[user_feature])(
+            inputs[user_feature]
+        )
+        embedding_dims = int(math.sqrt(len(vocabulary[user_feature])))
         # Create an embedding layer with the specified dimensions.
         embedding_encoder = layers.Embedding(
             input_dim=len(vocabulary['user_id_input']),
             output_dim=embedding_dims,
-            name=f"{user_features}_embedding",
+            name=f"{user_feature}_embedding",
         )
         # Convert the index values to embedding representations.
-        encoded_other_features.append(embedding_encoder)
+        encoded_features.append(embedding_encoder(idx))
 
-    ## Create a single embedding vector for the user features
-    if len(encoded_other_features) > 1:
-        encoded_other_features = layers.concatenate(encoded_other_features)
-    elif len(encoded_other_features) == 1:
-        encoded_other_features = encoded_other_features[0]
+    # Create a single embedding vector for the user features - DAS GEHT ANDERS
+    if len(encoded_features) > 1:
+        encoded_features = layers.concatenate(encoded_features)
+    elif len(encoded_features) == 1:
+        encoded_features = encoded_features[0]
     else:
-        encoded_other_features = None
+        encoded_features = None
 
     ## Create a movie embedding encoder
     movie_embedding_dims = int(math.sqrt(len(vocabulary["movie_id"])))
     # Create a lookup to convert string values to integer indices.
-    movie_index_lookup = StringLookup(
+    movie_index_lookup = layers.StringLookup(
         vocabulary=vocabulary["movie_id"],
-        mask_token=None,
         num_oov_indices=0,
         name="movie_index_lookup",
     )
@@ -108,20 +110,20 @@ def encode_input(inputs, sequence_length=4):
         # Convert the string input values into integer indices.
         movie_idx = movie_index_lookup(movie_id)
         movie_embedding = movie_embedding_encoder(movie_idx)
-        encoded_movie = movie_embedding
         movie_genres_vector = movie_genres_lookup(movie_idx)
         encoded_movie = movie_embedding_processor(
             layers.concatenate([movie_embedding, movie_genres_vector])
         )
         return encoded_movie
 
-    ## Encoding target_movie_id
-    target_movie_id = inputs["target_movie_id"]
-    encoded_target_movie = encode_movie(target_movie_id)
-
     ## Encoding sequence movie_ids.
     sequence_movies_ids = inputs["sequence_movie_ids"]
     encoded_sequence_movies = encode_movie(sequence_movies_ids)
+
+    ## Encoding target_movie_id.
+    target_movie_id = inputs["target_movie_id"]
+    encoded_target_movie = encode_movie(target_movie_id)
+
     # Create positional embedding.
     position_embedding_encoder = layers.Embedding(
         input_dim=sequence_length,
@@ -129,17 +131,17 @@ def encode_input(inputs, sequence_length=4):
         name="position_embedding",
     )
     positions = tf.range(start=0, limit=sequence_length - 1, delta=1)
-    encodded_positions = position_embedding_encoder(positions)
-    # Retrieve sequence ratings to incorporate them into the encoding of the movie.
+    encoded_positions = position_embedding_encoder(positions)
+    # Get sequence ratings to incorporate them into the encoding of the movie.
     sequence_ratings = tf.expand_dims(inputs["sequence_ratings"], -1)
     # Add the positional encoding to the movie encodings and multiply them by rating.
-    encoded_sequence_movies_with_poistion_and_rating = layers.Multiply()(
-        [(encoded_sequence_movies + encodded_positions), sequence_ratings]
+    encoded_sequence_movies_with_position_and_rating = layers.Multiply()(
+        [(encoded_sequence_movies + encoded_positions), sequence_ratings]
     )
 
     # Construct the transformer inputs.
     for encoded_movie in tf.unstack(
-        encoded_sequence_movies_with_poistion_and_rating, axis=1
+        encoded_sequence_movies_with_position_and_rating, axis=1
     ):
         encoded_transformer_features.append(tf.expand_dims(encoded_movie, 1))
     encoded_transformer_features.append(encoded_target_movie)
@@ -148,7 +150,7 @@ def encode_input(inputs, sequence_length=4):
         encoded_transformer_features, axis=1
     )
 
-    return encoded_transformer_features, encoded_other_features
+    return encoded_transformer_features, encoded_features
 
 ## Vocabulary dataset for Embedding
 def create_embedding_vocabulary(dataframe):
