@@ -13,11 +13,10 @@ USER_FEATURES = []
 def create_input_model(sequence_size=4):
 
 
-    #We just create input layers. It doesn't contain any data
-    user_id_input = layers.input(input_shape=(1,), dtype=tf.string, name='user_id_input')
-
-    #TODO: why EMPTY? We just create input layers. It doesn't contain any data
-    movie_id_input = layers.input(input_shape=(1,), dtype=tf.string, name='movie_id_input')
+    # Define input layer for user IDs
+    user_id_input = layers.Input(
+        name="user_id", shape=(1,), dtype=tf.string
+    )
 
     # Define input layer for sequence of movie IDs
     sequence_movie_ids_input = layers.Input(
@@ -43,18 +42,22 @@ def create_input_model(sequence_size=4):
 
     return user_id_input, sequence_movie_ids_input, target_movie_id_input, sequence_ratings_input, target_rating_input
 
+# IDEA: 
+# - create a single input tensor from the user informations (features) 
+# - encode movies in the sequence and add movie genre information (encoded as vectors)
+# - positional embedding added to the movie sequences
+# - add target movie to the movie sequence embedding
 def encode_input(inputs, sequence_length=4):
-    # TODO: difference between input and dataframe... is vocabulary generated outside?
-    # vocabulary = create_embedding_vocabulary(inputs) 
-    ## TODO: Encode user features - what features do we include, how to separate
-    users = input['user_id_input']
-    vocabulary = list(users.user_id.unique())
+    # create vocabularies for embedding
+    vocabulary = create_embedding_vocabulary(inputs) 
+    ## Encode user features - what features do we include, how to separate
+    users = inputs['user_id_input']
     for user_features in users:
         # Compute embedding dimensions
-        embedding_dims = int(math.sqrt(len(vocabulary)))
+        embedding_dims = int(math.sqrt(len(vocabulary['user_id_input'])))
         # Create an embedding layer with the specified dimensions.
         embedding_encoder = layers.Embedding(
-            input_dim=len(vocabulary),
+            input_dim=len(vocabulary['user_id_input']),
             output_dim=embedding_dims,
             name=f"{user_features}_embedding",
         )
@@ -69,22 +72,18 @@ def encode_input(inputs, sequence_length=4):
     else:
         encoded_other_features = None
 
-    movies = input['movie_id_input']
-
     ## Create a movie embedding encoder
-    unique_movie_values = list(movies.movie_id.unique()),
-    movie_vocabulary = unique_movie_values
-    movie_embedding_dims = int(math.sqrt(len(movie_vocabulary)))
+    movie_embedding_dims = int(math.sqrt(len(vocabulary["movie_id"])))
     # Create a lookup to convert string values to integer indices.
     movie_index_lookup = StringLookup(
-        vocabulary=movie_vocabulary,
+        vocabulary=vocabulary["movie_id"],
         mask_token=None,
         num_oov_indices=0,
         name="movie_index_lookup",
     )
     # Create an embedding layer with the specified dimensions.
     movie_embedding_encoder = layers.Embedding(
-        input_dim=len(movie_vocabulary),
+        input_dim=len(vocabulary["movie_id"]),
         output_dim=movie_embedding_dims,
         name=f"movie_embedding",
     )
@@ -151,13 +150,13 @@ def encode_input(inputs, sequence_length=4):
 
     return encoded_transformer_features, encoded_other_features
 
-## Vocaubulary dataset for Embedding
-def create_embedding_vocabulary(dataframe, col_list):
+## Vocabulary dataset for Embedding
+def create_embedding_vocabulary(dataframe):
     
     vocabulary = {}
 
     #Create vocabulary for each column
-    for col in col_list:
+    for col in dataframe:
         unique_values = dataframe[col].unique().tolist()
         vocabulary[col] = unique_values
     
