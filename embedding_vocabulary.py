@@ -2,7 +2,7 @@ from data_prep import transform_data
 from user_sequence import *
 
 
-def create_embedding_vocabulary(dataframes, col_list):
+def create_embedding_vocabulary(dataframes = [], col_list = []):
 
     """
     Create a vocabulary for the specified columns in the given dataframes.

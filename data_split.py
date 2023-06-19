@@ -58,6 +58,7 @@ if __name__ == '__main__':
 
     rating_col_subsequence = append_subsequences_to_columns(rating_sequence, ['time_period', 'movies_id', 'movie_ratings'], 8, 4)    
     rating_col_subsequence = transform_dataframe(rating_col_subsequence, ['time_period', 'movies_id', 'movie_ratings'])
+    rating_col_subsequence = rating_col_subsequence.join(users_data.set_index("user_id"), on="user_id") #Combine with user data 
 
 
     train_dataset, test_dataset = train_test_split(rating_col_subsequence, test_size=0.2, random_state=42, shuffle=True)   
