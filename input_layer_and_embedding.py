@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split
 from data_prep import transform_data
 from user_sequence import *
 from data_split import tensor_batched_dataset
+from embedding_vocabulary import create_embedding_vocabulary
 
 USER_FEATURES = []
 
@@ -36,9 +37,21 @@ def create_input_model(sequence_size=4):
         name="target_rating", shape=(1,), dtype=tf.int32
     )
 
+    #Define gender layer
+    gender = layers.Input(name="gender", shape=(1,), dtype=tf.string
+    )
+
+    #Define age_group layer
+    age_group = layers.Input(name="age_group", shape=(1,), dtype=tf.string
+    )
+
+    #Define occupation layer
+    occupation = layers.Input(name="occupation", shape=(1,), dtype=tf.string
+    )
+
     # add other user/movie information as input? positional encoding?
 
-    return user_id_input, sequence_movie_ids_input, target_movie_id_input, sequence_ratings_input, target_rating_input
+    return user_id_input, sequence_movie_ids_input, target_movie_id_input, sequence_ratings_input, target_rating_input, gender, age_group, occupation
 
 # IDEA: 
 # - create a single input tensor from the user informations (features) 
@@ -48,7 +61,7 @@ def create_input_model(sequence_size=4):
 def encode_input(inputs, sequence_length=4):
 
     # create vocabularies for embedding
-    vocabulary = create_embedding_vocabulary(inputs) 
+    vocabulary = create_embedding_vocabulary(inputs)  #Wrong since we don't take input from pipeline since it's empty. We do it via our data frame
     encoded_features = []
     ## Encode user features - what features do we include, how to separate
     # TODO: add user information, at this point only the ID is used for encoding meaning there is no logical background to it
@@ -152,19 +165,32 @@ def encode_input(inputs, sequence_length=4):
 
     return encoded_transformer_features, encoded_features
 
-## Vocabulary dataset for Embedding
-def create_embedding_vocabulary(dataframe):
+
+#def embed_features(input, dataframe_for_vocab = [], features_for_vocab = [], user_features = [], movie_features = []):
+ #   vocab = create_embedding_vocabulary(dataframe_for_vocab, features_for_vocab)
+  #  encoded_features = []
+
+
     
-    vocabulary = {}
 
-    #Create vocabulary for each column
-    for col in dataframe:
-        unique_values = dataframe[col].unique().tolist()
-        vocabulary[col] = unique_values
+ 
+if __name__== '__main__':
+    movies_data, ratings_data, users_data = transform_data() #Data transform
+    rating_sequence = prepare_user_sequence_data(ratings_data)
+    rating_col_subsequence = append_subsequences_to_columns(rating_sequence, ['time_period', 'movies_id', 'movie_ratings'], 8, 4)  #Create subsequence of length 8
+    rating_col_subsequence = transform_dataframe(rating_col_subsequence, ['time_period', 'movies_id', 'movie_ratings'])     #Clean user sequence data
     
-    return vocabulary
+    #Combine with user data 
+    rating_col_subsequence = rating_col_subsequence.join(users_data.set_index("user_id"), on="user_id") 
+    rating_col_subsequence = rating_col_subsequence.drop(columns=['zip_code'])
 
 
+    #Split into train and test dataset
+    train_dataset, test_dataset = train_test_split(rating_col_subsequence, test_size=0.2, random_state=42, shuffle=True)   
+    print(f"Length of Actual Dataset: {len(rating_col_subsequence)}, Length of Train Dataset: {len(train_dataset)}, Length of Test Dataset: {len(test_dataset)}")
+    
+    #Create vocabulary ->>(TODO: We might need to add movie_genres to the vocabulary)
+    vocabulary = create_embedding_vocabulary([movies_data, ratings_data, users_data], ['user_id', 'movie_id', 'age', 'occupation', 'gender']) 
 
 
 
