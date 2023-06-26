@@ -29,9 +29,8 @@ def create_embedding_vocabulary(dataframes = [], col_list = []):
     return vocabulary
 
 if __name__== '__main__':
-    movies_data, ratings_data, users_data = transform_data()
-    rating_sequence = prepare_user_sequence_data(ratings_data)
-    vocabulary = create_embedding_vocabulary([movies_data, ratings_data, users_data], ['user_id', 'movie_id', 'age', 'occupation', 'gender']) #We need to create vocabulary for original data
+    movies_data, ratings_data, users_data, all_genres = transform_data()
+    vocabulary = create_embedding_vocabulary([movies_data, ratings_data, users_data], ['user_id', 'movie_id', 'sex', 'age_group', 'occupation']) #We need to create vocabulary for original data
     print(vocabulary)
 
 
