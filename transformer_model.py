@@ -113,7 +113,7 @@ if __name__ == '__main__':
     train_dataset = get_dataset_from_csv("train_data.csv", CSV_HEADER, shuffle=True, batch_size=256)
 
     # Fit the model with the training data.
-    model.fit(train_dataset, epochs=5)
+    model.fit(train_dataset, epochs=2)
 
     # Read the test data.
     test_dataset = get_dataset_from_csv("test_data.csv", CSV_HEADER, batch_size=265)
