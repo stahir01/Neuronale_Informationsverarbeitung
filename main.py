@@ -10,6 +10,7 @@ from train_test_split import *
 from csv_dataset_processing import *
 from input_layer_and_embedding import *
 from transformer_model import *
+import matplotlib.pyplot as plt
 
 
 def run(sequence_len=8, step_siz=4, data_split=0.85, hidden_unit=[256, 128], dropout__rate=0.1, num__heads=3, learning__rate=0.01, batch__size=256, total_epochs=2):
@@ -75,23 +76,35 @@ def run(sequence_len=8, step_siz=4, data_split=0.85, hidden_unit=[256, 128], dro
     model.compile(
     optimizer=keras.optimizers.Adagrad(learning_rate=learning__rate),
     loss=keras.losses.MeanSquaredError(),
-    metrics=[keras.metrics.MeanAbsoluteError()],
-)
+    metrics=[keras.metrics.RootMeanSquaredError()
+             #keras.metrics.MeanAbsoluteError()
+             ]
+    )
 
     # Read the training data.
     train_dataset = get_dataset_from_csv("train_data.csv", CSV_HEADER, shuffle=True, batch_size=batch__size)
 
     # Fit the model with the training data.
-    model.fit(train_dataset, epochs=total_epochs)
+    history = model.fit(train_dataset, epochs=total_epochs)
+    rmse = history.history['root_mean_squared_error']
+    #mae = history.history['mean_absolute_error']
+
+    plt.plot(range(1, total_epochs + 1), rmse, 'b-', label='RMSE')
+    plt.title('RMSE per Epoch')
+    plt.xlabel('Epoch')
+    plt.ylabel('RMSE')
+    plt.legend()
+    plt.show()
 
     # Read the test data.
     test_dataset = get_dataset_from_csv("test_data.csv", CSV_HEADER, batch_size=batch__size)
 
     # Evaluate the model on the test data.
     _, rmse = model.evaluate(test_dataset, verbose=0)
-    print(f"Test MAE: {round(rmse, 3)}")
+    print(f"Test RMSE: {round(rmse, 3)}")
+
 
 if __name__ == '__main__':
-    run()
+    run(total_epochs=5)
 
     
