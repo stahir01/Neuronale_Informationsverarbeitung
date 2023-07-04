@@ -4,6 +4,7 @@ from user_sequence import *
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
 import numpy as np
+import csv
 
 """
 Idea:
@@ -45,7 +46,20 @@ def get_dataset_from_csv(csv_file_path, column_name, shuffle=False, batch_size=1
 
     return dataset
 
+def get_top_k(csv_file_path, k):
+    real_ratings = []
+    real_movies = []
+    with open(csv_file_path, newline='') as csvfile:
+        reader = csv.reader(csvfile, delimiter='|')
+        for row in reader:
+            real_ratings.append(row[2].split(",")[-1])
+            real_movies.append(row[1].split(",")[-1])
+    
+    top_k_ind = np.argpartition(np.array(real_ratings), -k)[-k:]
+    top_k = np.array(real_movies)[top_k_ind]
+    return top_k
 
+print(get_top_k('test_data.csv', 10))
 """
 #Convert pandas dataset into tensor
 def tensor_batched_dataset(train_dataset, batch_size, number=7):

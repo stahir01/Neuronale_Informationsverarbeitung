@@ -2,7 +2,6 @@ import math
 import tensorflow as tf
 import numpy as np
 from tensorflow.keras import layers
-from data_prep import transform_data
 from user_sequence import *
 from embedding_vocabulary import *
 from train_test_split import *

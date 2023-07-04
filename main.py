@@ -13,14 +13,14 @@ from transformer_model import *
 import matplotlib.pyplot as plt
 
 
-def run(sequence_len=8, step_siz=4, data_split=0.85, hidden_unit=[256, 128], dropout__rate=0.1, num__heads=3, learning__rate=0.01, batch__size=256, total_epochs=2):
+def run(sequence_length=8, step_size=4, data_split=0.85, hidden_unit=[256, 128], dropout__rate=0.1, num__heads=3, learning__rate=0.01, batch__size=256, total_epochs=2):
 
     """
     This function runs the whole process of the model. It takes the parameters for the model and the training process as input.
 
     Args:
-        sequence_len (int, optional): Length of the sequence. Defaults to 8.
-        step_siz (int, optional): Step size of the sequence. Defaults to 4.
+        sequence_length (int, optional): Length of the sequence. Defaults to 8.
+        step_size (int, optional): Step size of the sequence. Defaults to 4.
         data_split (float, optional): Split of the data into train and test data. Defaults to 0.85.
         hidden_unit (list, optional): List of hidden units for the model. Defaults to [256, 128].
         dropout__rate (float, optional): Dropout rate for the model. Defaults to 0.1.
@@ -38,8 +38,6 @@ def run(sequence_len=8, step_siz=4, data_split=0.85, hidden_unit=[256, 128], dro
     movies_data, ratings_data, users_data, all_genres = transform_data()
     rating_sequence = prepare_user_sequence_data(ratings_data)
 
-    sequence_length = sequence_len
-    step_size = step_siz
     rating_col_subsequence = append_subsequences_to_columns(rating_sequence, ['unix_timestamp', 'movie_ids', 'ratings'], sequence_length, step_size)
 
     rating_col_subsequence = transform_dataframe(rating_col_subsequence, ['unix_timestamp', 'movie_ids', 'ratings'])
@@ -103,6 +101,11 @@ def run(sequence_len=8, step_siz=4, data_split=0.85, hidden_unit=[256, 128], dro
     _, rmse = model.evaluate(test_dataset, verbose=0)
     print(f"Test RMSE: {round(rmse, 3)}")
 
+    print(get_top_k("train_data.csv", 10))
+    y = model.predict(test_dataset)
+    top_k_ind = np.argpartition(y.flatten(), -10)[-10:]
+    print(top_k_ind)
+    print(test_dataset[top_k_ind])
 
 if __name__ == '__main__':
     run(total_epochs=5)
